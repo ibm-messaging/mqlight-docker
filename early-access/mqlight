@@ -1,0 +1,81 @@
+#!/bin/bash
+# -*- mode: sh -*-
+# © Copyright IBM Corporation 2015.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -e
+
+INSTALL_DIR=/opt/mqlight
+export PATH=$PATH:$INSTALL_DIR:$INSTALL_DIR/runtime/bin
+CONFIG=""
+
+licenseCheck()
+{
+	if [ "$LICENSE" = "accept" ]; then
+		CONFIG="$CONFIG --accept-license"
+		return
+	elif [ "$LICENSE" = "view" ]; then
+		mqlight-config --show-license
+		exit 1
+	else
+		echo -e "Set environment variable LICENSE=accept to indicate acceptance of license terms and conditions.\n\nLicense agreements and information can be viewed by running this image with the environment variable LICENSE=view."
+		exit 2
+	fi
+}
+
+config()
+{
+	if [ -n "$MQLIGHT_USER" ]; then
+		CONFIG="$CONFIG --user $MQLIGHT_USER"
+	fi
+	if [ -n "$MQLIGHT_PASSWORD" ]; then
+		CONFIG="$CONFIG --password $MQLIGHT_PASSWORD"
+	fi
+	if [ -n "$MQLIGHT_TLS_PASSPHRASE" ]; then
+		CONFIG="$CONFIG --ssl-passphrase $MQLIGHT_TLS_PASSPHRASE"
+	fi
+	if [ -n "$MQLIGHT_TLS_KEYSTORE" ]; then
+		CONFIG="$CONFIG --ssl-keystore $MQLIGHT_TLS_KEYSTORE"
+	fi
+}
+	
+stop()
+{
+	mqlight-stop
+	dspmq
+	exit
+}
+
+monitor()
+{
+	# Loop until "dspmq" says the queue manager is running
+	until [ "`dspmq -n | cut -f3 -d"("`" == "RUNNING)" ]; do
+		sleep 1
+	done
+	dspmq
+
+	# Loop until "dspmq" says the queue manager is not running any more
+	until [ "`dspmq -n | cut -f3 -d"("`" != "RUNNING)" ]; do
+		sleep 5
+	done
+	dspmq
+}
+
+licenseCheck
+config
+( set -x ; mqlight-config -v ; mqlight-config $CONFIG ; mqlight-start )
+echo "----------------------------------------"
+echo "Monitoring MQ Light..."
+trap stop SIGTERM SIGINT
+monitor
