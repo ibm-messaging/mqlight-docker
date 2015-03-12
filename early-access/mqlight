@@ -17,22 +17,9 @@
 set -e
 
 INSTALL_DIR=/opt/mqlight
+CACHE_FILE=/var/cache/mqlight-data.tar.gz
 export PATH=$PATH:$INSTALL_DIR:$INSTALL_DIR/runtime/bin
 CONFIG=""
-
-licenseCheck()
-{
-	if [ "$LICENSE" = "accept" ]; then
-		CONFIG="$CONFIG --accept-license"
-		return
-	elif [ "$LICENSE" = "view" ]; then
-		mqlight-config --show-license
-		exit 1
-	else
-		echo -e "Set environment variable LICENSE=accept to indicate acceptance of license terms and conditions.\n\nLicense agreements and information can be viewed by running this image with the environment variable LICENSE=view."
-		exit 2
-	fi
-}
 
 config()
 {
@@ -49,16 +36,40 @@ config()
 		CONFIG="$CONFIG --ssl-keystore $MQLIGHT_TLS_KEYSTORE"
 	fi
 }
-	
-stop()
+
+initialize()
 {
+	set -x
+	export AMQ_INHIBIT_O_DIRECT=TRUE
+	mqlight-config -v
+	mqlight-config --accept-license
+	mqlight-start --no-browser
 	mqlight-stop
-	dspmq
-	exit
+	rm -rf $MQLIGHT_DATA_PATH/mqm/.lapc
+	GZIP=-9 tar zcf $CACHE_FILE -C $MQLIGHT_DATA_PATH .
+	rm -rf $MQLIGHT_DATA_PATH
+	mkdir $MQLIGHT_DATA_PATH
+}
+
+licenseCheck()
+{
+	if [ "$LICENSE" = "accept" ]; then
+		CONFIG="$CONFIG --accept-license"
+		return
+	elif [ "$LICENSE" = "view" ]; then
+		mqlight-config --show-license
+		exit 1
+	else
+		echo -e "Set environment variable LICENSE=accept to indicate acceptance of license terms and conditions.\n\nLicense agreements and information can be viewed by running this image with the environment variable LICENSE=view."
+		exit 2
+	fi
 }
 
 monitor()
 {
+	echo "----------------------------------------"
+	echo "Monitoring MQ Light..."
+
 	# Loop until "dspmq" says the queue manager is running
 	until [ "`dspmq -n | cut -f3 -d"("`" == "RUNNING)" ]; do
 		sleep 1
@@ -72,10 +83,40 @@ monitor()
 	dspmq
 }
 
-licenseCheck
-config
-( set -x ; mqlight-config -v ; mqlight-config $CONFIG ; mqlight-start )
-echo "----------------------------------------"
-echo "Monitoring MQ Light..."
-trap stop SIGTERM SIGINT
-monitor
+runmqras()
+{
+	echo "$INSTALL_DIR/runtime/bin/runmqras -section all -outputdir $MQLIGHT_DATA_PATH/mqm/errors"
+	$INSTALL_DIR/runtime/bin/runmqras -section all -outputdir $MQLIGHT_DATA_PATH/mqm/errors
+}
+
+start()
+{
+	if [ ! -f $MQLIGHT_DATA_PATH/mqm/mqs.ini ]; then
+		if [ -n "$MQLIGHT_REGENERATE_DATA" ]; then
+			echo "Reinitializing IBM MQ Light"
+		else
+			echo "Initializing IBM MQ Light"
+			tar zxf $CACHE_FILE -C $MQLIGHT_DATA_PATH
+                fi
+	fi
+	( set -x ; mqlight-config -v ; mqlight-config $CONFIG ;	mqlight-start --no-browser )
+}
+
+stop()
+{
+	mqlight-stop
+	dspmq
+	exit
+}
+
+case "$1" in
+	initialize)	initialize;;
+	runmqras)	runmqras;;
+	stop)		stop;;
+	start|*)	licenseCheck
+			config
+			start
+			trap stop SIGTERM SIGINT
+			monitor
+			;;
+esac

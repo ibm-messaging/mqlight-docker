@@ -16,20 +16,32 @@ FROM ubuntu:12.04
 
 MAINTAINER Arthur Barr <arthur.barr@uk.ibm.com>
 
-RUN export DEBIAN_FRONTEND=noninteractive && \
-	MQLIGHT_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa/IBM-MQ-Light-Linux-x64-early-access-L150205.1.tar.gz  && \
-	apt-get update -y && \
-	apt-get install -y curl tar bash net-tools && \
-	mkdir -p /opt/mqlight && \
-	curl -sL $MQLIGHT_URL | tar -zx --strip-components 1 -C /opt/mqlight
-	
+ENV MQLIGHT_DATA_PATH /var/mqlight
+
 COPY mqlight /usr/local/bin/
 
-RUN chmod +x /usr/local/bin/mqlight
+RUN chmod +x /usr/local/bin/mqlight && \
+    export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update -y && apt-get install -y \
+        bash \
+        curl \
+        net-tools \
+        tar && \
+    mkdir -p /opt/mqlight /var/mqlight && \
+    MQLIGHT_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa && \
+    MQLIGHT_PKG=IBM-MQ-Light-Linux-x64-early-access-L150205.1.tar.gz && \
+    curl -sL $MQLIGHT_URL/$MQLIGHT_PKG | tar -zx --strip-components 1 -C /opt/mqlight && \
+    /usr/local/bin/mqlight initialize && \
+    apt-get --purge remove --auto-remove curl -y && \
+    apt-get clean autoclean -y && \
+    rm -rf /tmp/* \
+        /var/cache/apt/* \
+        /var/lib/apt/lists/* \
+        /var/lib/cache/* \
+        /var/lib/log/* \
+        /var/tmp/*
 
-VOLUME /var/mqlight
-
-ENV MQLIGHT_DATA_PATH /var/mqlight
+VOLUME ${MQLIGHT_DATA_PATH}
 
 EXPOSE 5672 5671 9180 9181
 
