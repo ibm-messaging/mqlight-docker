@@ -99,6 +99,7 @@ start()
 			tar zxf $CACHE_FILE -C $MQLIGHT_DATA_PATH
                 fi
 	fi
+	rm $MQLIGHT_DATA_PATH/mqm/qmgrs/@SYSTEM/*.inf*
 	( set -x ; mqlight-config -v ; mqlight-config $CONFIG ;	mqlight-start --no-browser )
 }
 
