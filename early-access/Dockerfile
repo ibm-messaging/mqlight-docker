@@ -29,7 +29,7 @@ RUN chmod +x /usr/local/bin/mqlight && \
         tar && \
     mkdir -p /opt/mqlight /var/mqlight && \
     MQLIGHT_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa && \
-    MQLIGHT_PKG=IBM-MQ-Light-Linux-x64-early-access-L150205.1.tar.gz && \
+    MQLIGHT_PKG=IBM-MQ-Light-Linux-x64-early-access-L150326.1.tar.gz && \
     curl -sL $MQLIGHT_URL/$MQLIGHT_PKG | tar -zx --strip-components 1 -C /opt/mqlight && \
     /usr/local/bin/mqlight initialize && \
     apt-get --purge remove --auto-remove curl -y && \
