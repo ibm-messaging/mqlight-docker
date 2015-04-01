@@ -16,9 +16,8 @@
 
 set -e
 
-INSTALL_DIR=/opt/mqlight
+export PATH=$PATH:$MQLIGHT_HOME:$MQLIGHT_HOME/runtime/bin
 CACHE_FILE=/var/cache/mqlight-data.tar.gz
-export PATH=$PATH:$INSTALL_DIR:$INSTALL_DIR/runtime/bin
 CONFIG=""
 
 config()
@@ -39,14 +38,14 @@ config()
 
 initialize()
 {
-	set -x
 	export AMQ_INHIBIT_O_DIRECT=TRUE
-	mqlight-config -v
-	mqlight-config --accept-license
-	mqlight-start --no-browser
-	mqlight-stop
+	mqlight-config -v >/dev/null
+	mqlight-config --accept-license >/dev/null
+	mqlight-start --no-browser >/dev/null
+	mqlight-stop >/dev/null
 	rm -rf $MQLIGHT_DATA_PATH/mqm/.lapc
-	GZIP=-9 tar zcf $CACHE_FILE -C $MQLIGHT_DATA_PATH .
+	GZIP=-9 tar -c -z --owner=root --group=root --numeric-owner \
+		    -f $CACHE_FILE -C $MQLIGHT_DATA_PATH .
 	rm -rf $MQLIGHT_DATA_PATH
 	mkdir $MQLIGHT_DATA_PATH
 }
@@ -85,8 +84,8 @@ monitor()
 
 runmqras()
 {
-	echo "$INSTALL_DIR/runtime/bin/runmqras -section all -outputdir $MQLIGHT_DATA_PATH/mqm/errors"
-	$INSTALL_DIR/runtime/bin/runmqras -section all -outputdir $MQLIGHT_DATA_PATH/mqm/errors
+	echo "$MQLIGHT_HOME/runtime/bin/runmqras -section all -outputdir $MQLIGHT_DATA_PATH/mqm/errors"
+	$MQLIGHT_HOME/runtime/bin/runmqras -section all -outputdir $MQLIGHT_DATA_PATH/mqm/errors
 }
 
 start()

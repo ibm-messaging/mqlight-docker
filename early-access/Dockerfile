@@ -16,33 +16,35 @@ FROM ubuntu:12.04
 
 MAINTAINER Arthur Barr <arthur.barr@uk.ibm.com>
 
+ENV MQLIGHT_VERSION early-access-L150326.1
+ENV MQLIGHT_URL https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa/IBM-MQ-Light-Linux-x64-${MQLIGHT_VERSION}.tar.gz
+ENV MQLIGHT_HOME /opt/mqlight
 ENV MQLIGHT_DATA_PATH /var/mqlight
 
 COPY mqlight /usr/local/bin/
 
-RUN chmod +x /usr/local/bin/mqlight && \
-    export DEBIAN_FRONTEND=noninteractive && \
-    apt-get update -y && apt-get install -y \
-        bash \
-        curl \
-        net-tools \
-        tar && \
-    mkdir -p /opt/mqlight /var/mqlight && \
-    MQLIGHT_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa && \
-    MQLIGHT_PKG=IBM-MQ-Light-Linux-x64-early-access-L150326.1.tar.gz && \
-    curl -sL $MQLIGHT_URL/$MQLIGHT_PKG | tar -zx --strip-components 1 -C /opt/mqlight && \
-    /usr/local/bin/mqlight initialize && \
-    apt-get --purge remove --auto-remove curl -y && \
-    apt-get clean autoclean -y && \
-    rm -rf /tmp/* \
-        /var/cache/apt/* \
-        /var/lib/apt/lists/* \
-        /var/lib/cache/* \
-        /var/lib/log/* \
-        /var/tmp/*
+RUN set -x \
+        && chmod +x /usr/local/bin/mqlight \
+        && export DEBIAN_FRONTEND=noninteractive \
+        && apt-get update -qqy \
+        && apt-get install -qqy --no-install-recommends \
+                bash \
+                curl \
+                net-tools \
+                tar \
+                >/dev/null \
+        && mkdir -p ${MQLIGHT_HOME} ${MQLIGHT_DATA_PATH} \
+        && curl -sL ${MQLIGHT_URL} | tar -zx --strip-components 1 -C ${MQLIGHT_HOME} \
+        && /usr/local/bin/mqlight initialize \
+        && apt-get --purge remove --auto-remove curl -y \
+        && apt-get clean autoclean -y \
+        && rm -rf /tmp/* \
+                  /var/cache/apt/* \
+                  /var/lib/apt/lists/* \
+                  /var/lib/cache/* \
+                  /var/lib/log/* \
+                  /var/tmp/*
 
 VOLUME ${MQLIGHT_DATA_PATH}
-
 EXPOSE 5672 5671 9180 9181
-
 ENTRYPOINT ["mqlight"]
