@@ -15,28 +15,25 @@
 FROM ubuntu:12.04
 
 MAINTAINER Arthur Barr <arthur.barr@uk.ibm.com>
+RUN useradd -u 1000 --create-home --home-dir /home/user -g staff -G sudo user
+WORKDIR /home/user
 
-ENV MQLIGHT_VERSION early-access-L150326.1
-ENV MQLIGHT_URL https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa/IBM-MQ-Light-Linux-x64-${MQLIGHT_VERSION}.tar.gz
 ENV MQLIGHT_HOME /opt/mqlight
 ENV MQLIGHT_DATA_PATH /var/mqlight
 
-COPY mqlight /usr/local/bin/
-
 RUN set -x \
-        && chmod +x /usr/local/bin/mqlight \
         && export DEBIAN_FRONTEND=noninteractive \
         && apt-get update -qqy \
         && apt-get install -qqy --no-install-recommends \
                 bash \
                 curl \
                 net-tools \
+                sudo \
                 tar \
                 >/dev/null \
+        && sed -e 's/^%sudo	.*/%sudo	ALL=NOPASSWD:ALL/g' -i /etc/sudoers \
         && mkdir -p ${MQLIGHT_HOME} ${MQLIGHT_DATA_PATH} \
-        && curl -sL ${MQLIGHT_URL} | tar -zx --strip-components 1 -C ${MQLIGHT_HOME} \
-        && /usr/local/bin/mqlight initialize \
-        && apt-get --purge remove --auto-remove curl -y \
+        && chown user:staff ${MQLIGHT_HOME} ${MQLIGHT_DATA_PATH} \
         && apt-get clean autoclean -y \
         && rm -rf /tmp/* \
                   /var/cache/apt/* \
@@ -45,6 +42,17 @@ RUN set -x \
                   /var/lib/log/* \
                   /var/tmp/*
 
-VOLUME ${MQLIGHT_DATA_PATH}
+ENV MQLIGHT_VERSION early-access-L150326.1
+ENV MQLIGHT_URL https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa/IBM-MQ-Light-Linux-x64-${MQLIGHT_VERSION}.tar.gz
+
+COPY mqlight /usr/local/bin/
+
+RUN set -x \
+        && chmod +x /usr/local/bin/mqlight \
+        && su -c "curl -sL ${MQLIGHT_URL} | tar -zx --strip-components 1 -C ${MQLIGHT_HOME}" user \
+        && su -c "/usr/local/bin/mqlight initialize" user
+
 EXPOSE 5672 5671 9180 9181
+VOLUME ${MQLIGHT_DATA_PATH}
+USER user
 ENTRYPOINT ["mqlight"]

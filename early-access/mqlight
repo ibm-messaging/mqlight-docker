@@ -17,7 +17,7 @@
 set -e
 
 export PATH=$PATH:$MQLIGHT_HOME:$MQLIGHT_HOME/runtime/bin
-CACHE_FILE=/var/cache/mqlight-data.tar.gz
+CACHE_FILE=/home/user/mqlight-data.tar.gz
 CONFIG=""
 
 config()
@@ -44,10 +44,15 @@ initialize()
 	mqlight-start --no-browser >/dev/null
 	mqlight-stop >/dev/null
 	rm -rf $MQLIGHT_DATA_PATH/mqm/.lapc
-	GZIP=-9 tar -c -z --owner=root --group=root --numeric-owner \
+	GZIP=-9 tar -c -z --owner=user --group=staff --numeric-owner \
 		    -f $CACHE_FILE -C $MQLIGHT_DATA_PATH .
-	rm -rf $MQLIGHT_DATA_PATH
-	mkdir $MQLIGHT_DATA_PATH
+	rm -rf $MQLIGHT_DATA_PATH/*
+	touch $MQLIGHT_DATA_PATH/.keepfile
+}
+
+chownDataPath()
+{
+	sudo chown -R user:staff ${MQLIGHT_DATA_PATH} >/dev/null 2>&1
 }
 
 licenseCheck()
@@ -111,9 +116,11 @@ stop()
 
 case "$1" in
 	initialize)	initialize;;
+	chown)		chown;;
 	runmqras)	runmqras;;
 	stop)		stop;;
-	start|*)	licenseCheck
+	start|*)	chownDataPath
+			licenseCheck
 			config
 			start
 			trap stop SIGTERM SIGINT
