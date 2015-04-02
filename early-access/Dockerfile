@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:12.04
+FROM ubuntu:14.04
 
 MAINTAINER Arthur Barr <arthur.barr@uk.ibm.com>
 RUN useradd -u 1000 --create-home --home-dir /home/user -g staff -G sudo user
@@ -43,7 +43,7 @@ RUN set -x \
                   /var/tmp/*
 
 ENV MQLIGHT_VERSION early-access-L150326.1
-ENV MQLIGHT_URL https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa/IBM-MQ-Light-Linux-x64-${MQLIGHT_VERSION}.tar.gz
+ENV MQLIGHT_URL http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa/IBM-MQ-Light-Linux-x64-${MQLIGHT_VERSION}.tar.gz
 
 COPY mqlight /usr/local/bin/
 
