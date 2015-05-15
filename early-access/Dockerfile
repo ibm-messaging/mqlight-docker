@@ -26,6 +26,8 @@ RUN set -x \
         && apt-get update -qqy \
         && apt-get install -qqy --no-install-recommends \
                 bash \
+                bc \
+                coreutils \
                 curl \
                 net-tools \
                 sudo \
