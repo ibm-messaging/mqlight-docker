@@ -17,7 +17,9 @@
 set -e
 
 export PATH=$PATH:$MQLIGHT_HOME:$MQLIGHT_HOME/runtime/bin
-CACHE_FILE=/home/user/mqlight-data.tar.gz
+export AMQ_INHIBIT_O_DIRECT=TRUE
+export MQS_IPC_HOST=docker-container
+CACHE_FILE=$MQLIGHT_DOCKER_HOME/mqlight-data.tar.gz
 CONFIG=""
 
 config()
@@ -38,13 +40,12 @@ config()
 
 initialize()
 {
-	export AMQ_INHIBIT_O_DIRECT=TRUE
 	mqlight-config -v >/dev/null
 	mqlight-config --accept-license >/dev/null
 	mqlight-start --no-browser >/dev/null
 	mqlight-stop >/dev/null
 	rm -rf $MQLIGHT_DATA_PATH/mqm/.lapc
-	GZIP=-9 tar -c -z --owner=user --group=staff --numeric-owner \
+	GZIP=-9 tar -c -z --owner=$MQLIGHT_DOCKER_USER --group=$MQLIGHT_DOCKER_GROUP --numeric-owner \
 		    -f $CACHE_FILE -C $MQLIGHT_DATA_PATH .
 	rm -rf $MQLIGHT_DATA_PATH/*
 	touch $MQLIGHT_DATA_PATH/.keepfile
@@ -52,7 +53,7 @@ initialize()
 
 chownDataPath()
 {
-	sudo chown -R user:staff ${MQLIGHT_DATA_PATH} >/dev/null 2>&1
+	sudo chown -R $MQLIGHT_DOCKER_USER:$MQLIGHT_DOCKER_GROUP $MQLIGHT_DATA_PATH >/dev/null 2>&1
 }
 
 licenseCheck()
@@ -95,29 +96,66 @@ runmqras()
 
 start()
 {
-	if [ ! -f $MQLIGHT_DATA_PATH/mqm/mqs.ini ]; then
-		if [ -n "$MQLIGHT_REGENERATE_DATA" ]; then
-			echo "Reinitializing IBM MQ Light"
-		else
-			echo "Initializing IBM MQ Light"
-			tar zxf $CACHE_FILE -C $MQLIGHT_DATA_PATH
-                fi
+	# Check that the MQ Light data path is hosted by a suitable file system.
+	# Note: because MQ Light uses memory-mapped files you cannot map
+	# MQLIGHT_DATA_PATH to a vboxsf file system due to VirtualBox defect 819
+	# (https://www.virtualbox.org/ticket/819).
+	FSTYPE=$(df --output=fstype $MQLIGHT_DATA_PATH | tail -1)
+	if [ ${FSTYPE} = "vboxsf" ]; then
+		echo -e "\nERROR: $MQLIGHT_DATA_PATH cannot be mapped to a vboxsf file system. Please specify an alternative volume.\n" 1>&2
+		exit 1
 	fi
-	rm $MQLIGHT_DATA_PATH/mqm/qmgrs/@SYSTEM/*.inf*
+
+	# Extract the MQ Light data on first use...
+	if [ ! -f $MQLIGHT_DATA_PATH/mqm/mqs.ini ]; then
+		echo "Initializing IBM MQ Light"
+		tar zxf $CACHE_FILE -C $MQLIGHT_DATA_PATH
+	elif [ -n "$MQLIGHT_REGENERATE_DATA" ]; then
+		echo "Reinitializing IBM MQ Light"
+		tar zxf $CACHE_FILE -C $MQLIGHT_DATA_PATH
+	fi
+	rm -f $MQLIGHT_DATA_PATH/mqm/qmgrs/@SYSTEM/*.inf*
+
+	# Set MQLIGHT_TRACE to trace MQ Light as it runs
+	if [ -n "$MQLIGHT_TRACE" ]; then
+		starttrace
+	fi
+
+	# Now start MQ Light
 	( set -x ; mqlight-config -v ; mqlight-config $CONFIG ;	mqlight-start --no-browser )
+}
+
+starttrace()
+{
+	echo "Starting MQ Light trace"
+	rm -f $MQLIGHT_DATA_PATH/mqm/trace/*
+	strmqtrc -t detail -t all
 }
 
 stop()
 {
+	if [ -n "$MQLIGHT_TRACE" ]; then
+		stoptrace
+	fi
 	mqlight-stop
 	dspmq
 	exit
 }
 
+stoptrace()
+{
+	echo "Stopping MQ Light trace"
+	endmqtrc
+	echo "Collecting MQ Light diagnostic information and formatting trace"
+	runmqras
+}
+
 case "$1" in
 	initialize)	initialize;;
-	chown)		chown;;
+	chown)		chownDataPath;;
 	runmqras)	runmqras;;
+	starttrace)	starttrace;;
+	stoptrace)	stoptrace;;
 	stop)		stop;;
 	start|*)	chownDataPath
 			licenseCheck

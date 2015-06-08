@@ -14,12 +14,16 @@
 
 FROM ubuntu:14.04
 
-MAINTAINER Arthur Barr <arthur.barr@uk.ibm.com>
-RUN useradd -u 1000 --create-home --home-dir /home/user -g staff -G sudo user
-WORKDIR /home/user
+MAINTAINER David McCann <mccannd@uk.ibm.com>
 
+ENV MQLIGHT_DOCKER_USER user
+ENV MQLIGHT_DOCKER_GROUP staff
+ENV MQLIGHT_DOCKER_HOME /home/${MQLIGHT_DOCKER_USER}
 ENV MQLIGHT_HOME /opt/mqlight
 ENV MQLIGHT_DATA_PATH /var/mqlight
+
+RUN useradd -u 1000 --create-home --home-dir ${MQLIGHT_DOCKER_HOME} -g ${MQLIGHT_DOCKER_GROUP} -G sudo ${MQLIGHT_DOCKER_USER}
+WORKDIR ${MQLIGHT_DOCKER_HOME}
 
 RUN set -x \
         && export DEBIAN_FRONTEND=noninteractive \
@@ -35,7 +39,7 @@ RUN set -x \
                 >/dev/null \
         && sed -e 's/^%sudo	.*/%sudo	ALL=NOPASSWD:ALL/g' -i /etc/sudoers \
         && mkdir -p ${MQLIGHT_HOME} ${MQLIGHT_DATA_PATH} \
-        && chown user:staff ${MQLIGHT_HOME} ${MQLIGHT_DATA_PATH} \
+        && chown ${MQLIGHT_DOCKER_USER}:${MQLIGHT_DOCKER_GROUP} ${MQLIGHT_HOME} ${MQLIGHT_DATA_PATH} \
         && apt-get clean autoclean -y \
         && rm -rf /tmp/* \
                   /var/cache/apt/* \
@@ -51,10 +55,10 @@ COPY mqlight /usr/local/bin/
 
 RUN set -x \
         && chmod +x /usr/local/bin/mqlight \
-        && su -c "curl -sL ${MQLIGHT_URL} | tar -zx --strip-components 1 -C ${MQLIGHT_HOME}" user \
-        && su -c "/usr/local/bin/mqlight initialize" user
+        && su -c "curl -sL ${MQLIGHT_URL} | tar -zx --strip-components 1 -C ${MQLIGHT_HOME}" ${MQLIGHT_DOCKER_USER} \
+        && su -c "/usr/local/bin/mqlight initialize" ${MQLIGHT_DOCKER_USER}
 
 EXPOSE 5672 5671 9180 9181
 VOLUME ${MQLIGHT_DATA_PATH}
-USER user
+USER ${MQLIGHT_DOCKER_USER}
 ENTRYPOINT ["mqlight"]

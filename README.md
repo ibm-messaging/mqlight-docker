@@ -1,8 +1,10 @@
-# Overview
+# IBM® MQ Light
+![IBM MQ Light logo](MQLightForDocker.png)
+## Overview
 
 This image contains [IBM MQ Light](https://developer.ibm.com/messaging/mq-light/).  The Dockerfile for this image can be found on the [ibm-messaging GitHub](https://github.com/ibm-messaging/mqlight-docker/blob/master/early-access/Dockerfile).
 
-# Usage
+## Usage
 
 In order to use the image, it is necessary to accept the terms of the MQ Light license.  This is achieved by specifying the environment variable `LICENSE` equal to `accept` when running the image.  You can also view the license terms by setting this variable to `view`. Failure to set the variable will result in the termination of the container with a usage statement.
 
@@ -37,7 +39,9 @@ sudo docker run \
 
 See the [MQ Light security tutorial](https://developer.ibm.com/messaging/mq-light/docs/security-tutorial/) for more details on how to create a key store.
 
-# Configuration
+**Note:** because MQ Light uses memory-mapped files you cannot map `/var/mqlight` to a vboxsf file system due to [VirtualBox defect 819](https://www.virtualbox.org/ticket/819). For example, the `/Users` directory is typically a vboxsf file system when running under boot2docker on Mac OS X.
+
+## Configuration
 
 The following environment variables can be used to configure MQ Light:
 
@@ -49,10 +53,10 @@ The following environment variables can be used to configure MQ Light:
 
 See the [MQ Light documentation](https://developer.ibm.com/messaging/mq-light/docs/) for more details about how to use MQ Light.
 
-# Issues and contributions
+## Issues and contributions
 
 For issues relating specifically to this Docker image, please use the [GitHub issue tracker](https://github.com/ibm-messaging/mqlight-docker/issues). For more general issue relating to IBM MQ Light you can [get help](https://developer.ibm.com/answers/?community=messaging) through the Messaging community. If you do submit a Pull Request related to this Docker image, please indicate in the Pull Request that you accept and agree to be bound by the terms of the [IBM Contributor License Agreement](CLA.md).
 
-# License
+## License
 
 The Dockerfile and associated scripts are licensed under the [Apache License 2.0](LICENSE). MQ Light is licensed under the IBM International License Agreement for Non-Warranted Programs. This license may be viewed from the image using the `LICENSE=view` environment variable as described above or may be found [online](http://www14.software.ibm.com/cgi-bin/weblap/lap.pl?li_formnum=L-ACRR-9MKEUW). Note that this license does not permit further distribution.
