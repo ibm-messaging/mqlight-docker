@@ -2,7 +2,7 @@
 ![IBM MQ Light logo](MQLightForDocker.png)
 ## Overview
 
-This image contains [IBM MQ Light](https://developer.ibm.com/messaging/mq-light/).  The Dockerfile for this image can be found on the [ibm-messaging GitHub](https://github.com/ibm-messaging/mqlight-docker/blob/master/early-access/Dockerfile).
+This image contains [IBM MQ Light](https://developer.ibm.com/messaging/mq-light/).  The Dockerfile for this image can be found on the [ibm-messaging GitHub](https://github.com/ibm-messaging/mqlight-docker/blob/master/1.0/Dockerfile).
 
 ## Usage
 
@@ -17,7 +17,7 @@ sudo docker run \
   --publish 5672:5672 \
   --publish 9180:9180 \
   --detach \
-  ibmimages/mqlight:early-access
+  ibmcom/mqlight:1.0
 ```
 
 The following command creates and starts an MQ Light container with security enabled.  Note that the mapped ports have changed to be the secure ports.
@@ -34,7 +34,7 @@ sudo docker run \
   --publish 5671:5671 \
   --publish 9181:9181 \
   --detach \
-  ibmimages/mqlight:early-access
+  ibmcom/mqlight:1.0
 ```
 
 See the [MQ Light security tutorial](https://developer.ibm.com/messaging/mq-light/docs/security-tutorial/) for more details on how to create a key store.
@@ -45,8 +45,8 @@ See the [MQ Light security tutorial](https://developer.ibm.com/messaging/mq-ligh
 
 The following environment variables can be used to configure MQ Light:
 
-* **LICENSE** - Set to "view" to view the license terms, or "accept" to accept the license terms.
-* **MQLIGHT_USER**  | Sets the administrative user name.  Must be used in conjunction with MQLIGHT_PASSWORD.
+* **LICENSE** | Set to "view" to view the license terms, or "accept" to accept the license terms.
+* **MQLIGHT_USER** | Sets the administrative user name.  Must be used in conjunction with MQLIGHT_PASSWORD.
 * **MQLIGHT_PASSWORD** | Sets the administrative user password.  Must be used in conjunction with MQLIGHT_USER.
 * **MQLIGHT_TLS_KEYSTORE** | Enables SSL/TLS security, and sets the PKCS#12 key store file path.  Note that you need to make the key store file available inside your Docker container - for example, you can add a volume by adding `-v /path/on/host/my.p12:/path/in/container/my.p12` when you invoke `docker run`.
 * **MQLIGHT_TLS_PASSPHRASE** | Sets the passphrase for the key store file, for SSL/TLS security
