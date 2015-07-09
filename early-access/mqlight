@@ -123,6 +123,15 @@ start()
 
 	# Now start MQ Light
 	( set -x ; mqlight-config -v ; mqlight-config $CONFIG ;	mqlight-start --no-browser )
+
+	# Point towards the more recent stable release at ibmcom/mqlight.
+	echo '********************************************************************'
+	echo '*                                                                  *'
+	echo '* Note: This early-access driver has been superseded by a more     *'
+	echo '*       recent stable release. Please update your Dockerfile to    *'
+	echo '*       run using ibmcom/mqlight:1.0 instead.                      *'
+	echo '*                                                                  *'
+	echo '********************************************************************'
 }
 
 starttrace()
