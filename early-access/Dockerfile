@@ -34,6 +34,7 @@ RUN set -x \
                 coreutils \
                 curl \
                 net-tools \
+                openjdk-7-jre \
                 sudo \
                 tar \
                 >/dev/null \
@@ -56,6 +57,10 @@ COPY mqlight /usr/local/bin/
 RUN set -x \
         && chmod +x /usr/local/bin/mqlight \
         && su -c "curl -sL ${MQLIGHT_URL} | tar -zx --strip-components 1 -C ${MQLIGHT_HOME}" ${MQLIGHT_DOCKER_USER} \
+        && rm -rf "${MQLIGHT_HOME}/runtime/java/jre64/jre" \
+        && ln -s /usr/lib/jvm/java-7-openjdk-amd64/jre "${MQLIGHT_HOME}/runtime/java/jre64/" \
+        && sed -e 's/-Xquickstart //' -i "${MQLIGHT_HOME}/runtime/bin/lap.sh" \
+        && sed -e '145s/Darwin/Linux/' -i "${MQLIGHT_HOME}/runtime/mqxr/bin/controlMQXR_mqm.sh" \
         && su -c "/usr/local/bin/mqlight initialize" ${MQLIGHT_DOCKER_USER}
 
 EXPOSE 5672 5671 9180 9181
