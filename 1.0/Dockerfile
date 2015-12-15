@@ -49,7 +49,7 @@ RUN set -x \
                   /var/lib/log/* \
                   /var/tmp/*
 
-ENV MQLIGHT_VERSION developer-1.0.0.2-L150629.1
+ENV MQLIGHT_VERSION developer-1.0.2.0-L151130.2
 ENV MQLIGHT_URL http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqkoa/1.0/IBM-MQ-Light-Linux-x64-${MQLIGHT_VERSION}.tar.gz
 
 COPY mqlight /usr/local/bin/
