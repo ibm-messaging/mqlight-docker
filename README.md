@@ -1,5 +1,5 @@
 # IBM® MQ Light
-![IBM MQ Light logo](MQLightForDocker.png)
+![IBM MQ Light logo](https://raw.githubusercontent.com/ibm-messaging/mqlight-docker/master/MQLightForDocker.png)
 ## Overview
 
 This image contains [IBM MQ Light](https://developer.ibm.com/messaging/mq-light/).  The Dockerfile for this image can be found on the [ibm-messaging GitHub](https://github.com/ibm-messaging/mqlight-docker/blob/master/1.0/Dockerfile).
